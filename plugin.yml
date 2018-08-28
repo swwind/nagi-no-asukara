@@ -1,0 +1,8 @@
+name: NagiNoAsukara
+main: me.swwind.plugin.Main
+version: 1.0
+api-version: 1.13
+commands:
+   summon-sea-master:
+      description: Summon sea master.
+      usage: /summon-sea-master
