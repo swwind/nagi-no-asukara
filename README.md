@@ -4,8 +4,6 @@ A plugin for spigot **1.13+**.
 
 Makes it possible to become a ocean man who lives in the ocean.
 
-**NOT FINISHED YET**
-
 ## Getting start
 
 Download jar file and put it into the plugins folder.
@@ -38,5 +36,5 @@ Right click the project > **Properties** > **Java Build Path** > **Libraries** >
 
 Right click the project > **Export...** > **Java/JAR file** > Select `src/` and `plugin.yml`, set name to `NagiNoAsukara.jar` > **Finish**.
 
-Then start your server to play.
+Then start your server to test.
 
