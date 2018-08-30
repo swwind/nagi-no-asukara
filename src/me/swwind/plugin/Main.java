@@ -17,6 +17,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.Villager.Career;
 import org.bukkit.entity.Villager.Profession;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -53,15 +54,21 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 		server.getPluginManager().registerEvents(this, this);
 		getCommand("summon-sea-master").setExecutor(this);
 
+		// game interval
+		final int TIMES_PRE_SECOND = 4;
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-
 			@Override
 			public void run() {
+				List<Player> onlines = new ArrayList<>(getServer().getOnlinePlayers());
+
 				List<String> list = config.getStringList(CONFIG_NAME);
-				for (int i = 0; i < list.size(); ++i) {
-					String name = list.get(i);
-					Player player = Bukkit.getPlayer(name);
-					if (player != null) {
+
+				for (int i = 0; i < onlines.size(); ++i) {
+					
+					Player player = onlines.get(i);
+					String name = player.getName();
+					
+					if (list.contains(name)) {
 
 						if (!bsr.containsKey(name)) {
 							bsr.put(name, createWaterBar(player));
@@ -71,9 +78,9 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 						double grs = bossbar.getProgress();
 
 						if (player.getLocation().getBlock().isLiquid()) {
-							grs += 1.0 / 20.0 / 4.0;
+							grs += 1.0 / 20 / TIMES_PRE_SECOND;
 						} else {
-							grs -= 1.0 / 360.0 / 4.0;
+							grs -= 1.0 / 360 / TIMES_PRE_SECOND;
 						}
 						
 						grs = Math.min(grs, 1);
@@ -87,7 +94,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 					}
 				}
 			}
-		}, 5, 5);
+		}, 5, 20 / TIMES_PRE_SECOND);
 	}
 
 	@Override
@@ -109,15 +116,16 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 			if (p.isOp()) {
 
 				Villager v = (Villager) p.getWorld().spawnEntity(p.getLocation(), EntityType.VILLAGER);
-				v.setCustomName("º£Éñ");
+				v.setCustomName("æµ·ç¥");
 				v.setProfession(Profession.NITWIT);
-				p.sendMessage("ÄãÒÑ¾­ÕÙ»½ÁËº£Éñ£¡");
+				v.setCareer(Career.NITWIT, true);
+				p.sendMessage("ä½ å·²ç»å¬å”¤äº†æµ·ç¥ï¼");
 
 				return true;
 
 			} else {
 
-				p.sendMessage("Ö»ÓĞ¹ÜÀíÔ±²ÅÓĞÈ¨ÏŞÊ¹ÓÃ¸ÃÖ¸Áî");
+				p.sendMessage("åªæœ‰ç®¡ç†å‘˜æ‰æœ‰æƒé™ä½¿ç”¨è¯¥æŒ‡ä»¤");
 
 				return false;
 
@@ -129,29 +137,25 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 	@EventHandler
 	public void onAskForAfterbirth(PlayerInteractEntityEvent e) {
 
-		if (e.isCancelled()) {
-			return;
-		}
-
 		Player p = e.getPlayer();
 
 		if (e.getRightClicked() instanceof Villager) {
 
 			Villager v = (Villager) e.getRightClicked();
 
-			if (v.getCustomName().equalsIgnoreCase("º£Éñ")) {
+			if (v.getCustomName().equalsIgnoreCase("æµ·ç¥")) {
 
 				Inventory inventory = p.getInventory();
 
 				List<String> list = config.getStringList(CONFIG_NAME);
 
 				if (list.contains(p.getName())) {
-					p.sendMessage("ÄãÒÑ¾­ÓĞ°ûÒÂÁË");
+					p.sendMessage("ä½ å·²ç»æœ‰èƒè¡£äº†");
 					return;
 				}
 
 				if (!inventory.containsAtLeast(new ItemStack(Material.PUFFERFISH), 5)) {
-					p.sendMessage("<º£Éñ> ±§Ç¸£¬ÎÒĞèÒª 5 ¸öºÓëà²ÅÄÜ°ïÄã°ìÊÂ");
+					p.sendMessage("<æµ·ç¥> æŠ±æ­‰ï¼Œæˆ‘éœ€è¦ 5 ä¸ªæ²³è±šæ‰èƒ½å¸®ä½ åŠäº‹");
 					return;
 				}
 
@@ -159,9 +163,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 				config.set(CONFIG_NAME, list);
 				inventory.removeItem(new ItemStack(Material.PUFFERFISH, 5));
 				giveAfterbirth(p);
-				p.sendMessage("<º£Éñ> ¸ĞĞ»ÄãµÄºÓëà£¬ÎÒÒÑ¾­¼¤»îÁËÄãµÄ°ûÒÂ");
-
-				Bukkit.broadcastMessage(p.getName() + " ³ÉÎªÁË´óº£µÄÒ»Ô±");
+				p.sendMessage("<æµ·ç¥> æ„Ÿè°¢ä½ çš„æ²³è±šï¼Œæˆ‘å·²ç»æ¿€æ´»äº†ä½ çš„èƒè¡£");
 
 				saveConfig();
 

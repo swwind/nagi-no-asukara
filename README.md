@@ -1,4 +1,4 @@
-# Nagi No Asukara Plugin
+# NagiNoAsukara Plugin
 
 A plugin for spigot **1.13+**.
 
@@ -16,11 +16,11 @@ Then start your server.
 
 `/summon-sea-master` Summon a sea master here(op needed).
 
-Give him 5 pufferfishes will give you 100000s of water-breathing effect as rewards.
+Give him 5 puffer fishes will give you 100000s of water-breathing effect as rewards.
 
 Since then you can live in the ocean! XD
 
-But instead, you would not able to stay without water for too long(actually 5 mins).
+But instead, you would not able to stay without water for too long(actually 6 mins).
 
 Good Luck & Have Fun!
 
