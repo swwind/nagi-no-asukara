@@ -6,8 +6,11 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
+import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.boss.BarColor;
@@ -24,10 +27,12 @@ import org.bukkit.entity.Villager.Career;
 import org.bukkit.entity.Villager.Profession;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -108,10 +113,16 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 							player.getFireTicks() > 0
 								
 							) {
-								
+
 							// not good for afterbirth
 							grs -= 1.0 / 5 / TIMES_PRE_SECOND;
-						
+						} else if (
+							// in nether
+							player.getWorld().getEnvironment() == Environment.NETHER
+							
+							) {
+							
+							grs -= 1.0 / 180 / TIMES_PRE_SECOND;
 						} else if (
 							// in a water log
 							block.getBlockData() instanceof Waterlogged ||
@@ -129,7 +140,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 								
 							) {
 								
-							grs += 1.0 / 20 / TIMES_PRE_SECOND;
+							grs += 1.0 / 30 / TIMES_PRE_SECOND;
 							
 						} else {
 							
@@ -199,6 +210,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 				v.setCustomName("海神");
 				v.setProfession(Profession.NITWIT);
 				v.setCareer(Career.NITWIT, true);
+				v.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, 100000, 0));
 				p.sendMessage("你已经召唤了海神！");
 
 				return true;
@@ -298,6 +310,18 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 	}
 
 	@EventHandler
+	public void onPlayerRespawn(PlayerRespawnEvent event) {
+
+		Player p = event.getPlayer();
+		String name = p.getName();
+		
+		if (wetDeath.contains(name)) {
+			p.setHealthScale(20);
+			wetDeath.remove(name);
+		}
+	}
+	
+	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event) {
 
 		Player p = event.getEntity();
@@ -305,7 +329,6 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 		
 		if (wetDeath.contains(name)) {
 			event.setDeathMessage(name + " 干死了");
-			wetDeath.remove(name);
 		}
 
 		List<String> list = config.getStringList(CONFIG_NAME);
@@ -320,8 +343,6 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 			b.removeAll();
 			bsr.remove(name);
 		}
-		
-		p.setHealthScale(20);
 	}
 	
 	@EventHandler
@@ -332,6 +353,32 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 
 		if (bossbar != null) {
 			bossbar.addPlayer(p);
+		}
+	}
+	
+	@EventHandler
+	public void onPlayerHit(EntityDamageByEntityEvent event) {
+		if (event.getEntity() instanceof Villager) {
+			
+			Villager v = (Villager) event.getEntity();
+			
+			if (v.getCustomName().equalsIgnoreCase("海神")) {
+				
+				event.setCancelled(true);
+				
+				if (event.getDamager() instanceof Player) {
+					
+					Player p = (Player) event.getDamager();
+					p.sendMessage("<海神> 乖♂乖♂站♂好");
+					
+					World w = p.getWorld();
+					Location l = v.getLocation();
+					
+					w.spawnEntity(l, EntityType.PUFFERFISH);
+					w.spawnEntity(l, EntityType.TROPICAL_FISH);
+					w.spawnEntity(l, EntityType.TROPICAL_FISH);
+				}
+			}
 		}
 	}
 }
