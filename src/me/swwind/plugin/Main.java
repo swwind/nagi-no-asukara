@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.boss.BarColor;
@@ -50,13 +51,13 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 	private List<String> asking;
 
 	private final String CONFIG_NAME = "oceanman";
-	
+
 	private BossBar createWaterBar(Player player) {
 
 		BossBar bossbar = server.createBossBar("Water Remains", BarColor.BLUE, BarStyle.SEGMENTED_6);
 		bossbar.setVisible(true);
 		bossbar.addPlayer(player);
-		
+
 		return bossbar;
 	}
 
@@ -68,7 +69,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 		bsr = new HashMap<>();
 		wetDeath = new ArrayList<>();
 		asking = new ArrayList<>();
-		
+
 		config.addDefault(CONFIG_NAME, new ArrayList<String>());
 		server.getPluginManager().registerEvents(this, this);
 		getCommand("summon-sea-master").setExecutor(this);
@@ -84,84 +85,90 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 
 				List<String> list = config.getStringList(CONFIG_NAME);
 
-				for (int i = 0; i < onlines.size(); ++ i) {
-					
+				for (int i = 0; i < onlines.size(); ++i) {
+
 					Player player = onlines.get(i);
 					String name = player.getName();
-					
+
 					if (list.contains(name)) {
-						
-						if (player.getGameMode() == GameMode.CREATIVE ||
-							player.getGameMode() == GameMode.SPECTATOR) {
+
+						if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
 							return;
 						}
 
 						if (!bsr.containsKey(name)) {
 							bsr.put(name, createWaterBar(player));
 						}
-						
+
 						BossBar bossbar = bsr.get(player.getName());
 						double grs = bossbar.getProgress();
-						
+
 						Block block = player.getLocation().getBlock();
 
 						if (
-							// in lava
-							block.getType() == Material.LAVA ||
-								
-							// on fire
-							player.getFireTicks() > 0
-								
-							) {
+						// in lava
+						block.getType() == Material.LAVA ||
 
-							// not good for afterbirth
+						// on fire
+						player.getFireTicks() > 0
+
+						) {
+							
+							// on fired
 							grs -= 1.0 / 5 / TIMES_PRE_SECOND;
+							
 						} else if (
-							// in nether
-							player.getWorld().getEnvironment() == Environment.NETHER
-							
-							) {
-							
+						// in nether
+						player.getWorld().getEnvironment() == Environment.NETHER ||
+
+						// in desert
+						player.getLocation().getBlock().getBiome() == Biome.DESERT
+
+						) {
+
+							// in a dry environment
 							grs -= 1.0 / 180 / TIMES_PRE_SECOND;
+
 						} else if (
-							// in a water log
-							block.getBlockData() instanceof Waterlogged ||
-								
+						// in a water log
+						block.getBlockData() instanceof Waterlogged ||
+
+						// in water
+						block.getType() == Material.WATER ||
+
+						// in sea grass
+						block.getType() == Material.KELP_PLANT || block.getType() == Material.SEAGRASS
+								|| block.getType() == Material.TALL_SEAGRASS ||
+
+						// in rain
+						(player.getWorld().hasStorm() && player.getLocation().getBlockY() >= player.getWorld()
+								.getHighestBlockYAt(player.getLocation()))
+
+						) {
+
 							// in water
-							block.getType() == Material.WATER ||
-								
-							// in sea grass
-							block.getType() == Material.KELP_PLANT ||
-							block.getType() == Material.SEAGRASS ||
-							block.getType() == Material.TALL_SEAGRASS ||
-								
-							// in rain
-							(player.getWorld().hasStorm() && player.getLocation().getBlockY() >= player.getWorld().getHighestBlockYAt(player.getLocation()))
-								
-							) {
-								
 							grs += 1.0 / 30 / TIMES_PRE_SECOND;
-							
+
 						} else {
-							
-							// on land
+
+							// on normal land
 							grs -= 1.0 / 360 / TIMES_PRE_SECOND;
-						
+
 						}
-						
+
 						grs = Math.min(grs, 1);
 						grs = Math.max(grs, 0);
 						bossbar.setVisible(grs < 1);
 						bossbar.setProgress(grs);
-						
+
 						int health = getHeath(grs);
-						
+
 						if (health == 0) {
 							wetDeath.add(name);
 							player.setHealth(0);
 						}
 						player.setHealthScale(health * 2);
-						
+
 						if (!player.hasPotionEffect(PotionEffectType.WATER_BREATHING)) {
 							giveAfterbirth(player);
 						}
@@ -179,16 +186,26 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 
 	private int getHeath(double grs) {
 		int time = (int) (grs * 360);
-		if (time >= 180) return 10;
-		if (time >= 120) return 9;
-		if (time >= 90)  return 8;
-		if (time >= 60)  return 7;
-		if (time >= 50)  return 6;
-		if (time >= 40)  return 5;
-		if (time >= 30)  return 4;
-		if (time >= 20)  return 3;
-		if (time >= 10)  return 2;
-		if (time >= 1)   return 1;
+		if (time >= 180)
+			return 10;
+		if (time >= 120)
+			return 9;
+		if (time >= 90)
+			return 8;
+		if (time >= 60)
+			return 7;
+		if (time >= 50)
+			return 6;
+		if (time >= 40)
+			return 5;
+		if (time >= 30)
+			return 4;
+		if (time >= 20)
+			return 3;
+		if (time >= 10)
+			return 2;
+		if (time >= 1)
+			return 1;
 		return 0;
 	}
 
@@ -228,7 +245,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 
 	@EventHandler
 	public void onAskSeaMaster(PlayerInteractEntityEvent e) {
-		
+
 		e.setCancelled(true);
 
 		Player p = e.getPlayer();
@@ -238,11 +255,11 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 			Villager v = (Villager) e.getRightClicked();
 
 			if (v.getCustomName().equalsIgnoreCase("海神")) {
-				
+
 				if (asking.contains(p.getName())) {
 					return;
 				}
-				
+
 				p.sendMessage("<海神> 你想要我做什么？");
 				p.sendMessage("1) 获取胞衣（需要 5 个河豚）");
 				p.sendMessage("2) 换取 16 个海泡菜（需要 64 个海带）");
@@ -250,16 +267,16 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 			}
 		}
 	}
-	
+
 	@EventHandler
 	public void onChat(AsyncPlayerChatEvent event) {
 		Player p = event.getPlayer();
 		String name = p.getName();
-		
+
 		if (asking.contains(name)) {
 			asking.remove(name);
 			event.setCancelled(true);
-			
+
 			String message = event.getMessage();
 			switch (message) {
 			case "1": // ask for after birth
@@ -273,7 +290,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 			}
 		}
 	}
-	
+
 	public void handleAskForAfterbirth(Player p) {
 		Inventory inventory = p.getInventory();
 		List<String> list = config.getStringList(CONFIG_NAME);
@@ -292,7 +309,7 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 		config.set(CONFIG_NAME, list);
 		inventory.removeItem(new ItemStack(Material.PUFFERFISH, 5));
 		p.sendMessage("<海神> 感谢你的河豚，你可以在水下自由呼吸了");
-		
+
 		saveConfig();
 	}
 
@@ -314,37 +331,37 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 
 		Player p = event.getPlayer();
 		String name = p.getName();
-		
+
 		if (wetDeath.contains(name)) {
 			p.setHealthScale(20);
 			wetDeath.remove(name);
 		}
 	}
-	
+
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event) {
 
 		Player p = event.getEntity();
 		String name = p.getName();
-		
+
 		if (wetDeath.contains(name)) {
 			event.setDeathMessage(name + " 干死了");
 		}
 
 		List<String> list = config.getStringList(CONFIG_NAME);
-		
+
 		if (list.remove(name)) {
 			config.set(CONFIG_NAME, list);
 			saveConfig();
 		}
-		
+
 		if (bsr.containsKey(name)) {
 			BossBar b = bsr.get(name);
 			b.removeAll();
 			bsr.remove(name);
 		}
 	}
-	
+
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 
@@ -355,25 +372,25 @@ public class Main extends JavaPlugin implements Listener, CommandExecutor {
 			bossbar.addPlayer(p);
 		}
 	}
-	
+
 	@EventHandler
 	public void onPlayerHit(EntityDamageByEntityEvent event) {
 		if (event.getEntity() instanceof Villager) {
-			
+
 			Villager v = (Villager) event.getEntity();
-			
+
 			if (v.getCustomName().equalsIgnoreCase("海神")) {
-				
+
 				event.setCancelled(true);
-				
+
 				if (event.getDamager() instanceof Player) {
-					
+
 					Player p = (Player) event.getDamager();
 					p.sendMessage("<海神> 乖♂乖♂站♂好");
-					
+
 					World w = p.getWorld();
 					Location l = v.getLocation();
-					
+
 					w.spawnEntity(l, EntityType.PUFFERFISH);
 					w.spawnEntity(l, EntityType.TROPICAL_FISH);
 					w.spawnEntity(l, EntityType.TROPICAL_FISH);
