@@ -2,6 +2,7 @@
 
 .settings/
 bin/
+dist/
 
 .classpath
 .project
